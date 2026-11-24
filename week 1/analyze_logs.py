@@ -2,6 +2,11 @@ import sys
 import json
 import os
 import argparse
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
+_env_log = os.getenv("LLM_LOG_FILE", "llm_calls.jsonl")
+DEFAULT_LOG_FILE = str(BASE_DIR / _env_log) if not os.path.isabs(_env_log) else _env_log
 
 
 def parse_log_file(file_path):
@@ -45,10 +50,14 @@ def calculate_metrics(records):
     errors = 0
     trace_counts = {}
     model_stats = {}
+    run_types = {}
 
     for r in records:
         tid = r.get("trace_id", "unknown")
         trace_counts[tid] = trace_counts.get(tid, 0) + 1
+
+        rtype = r.get("run_type", "manual")
+        run_types[rtype] = run_types.get(rtype, 0) + 1
 
         p = r.get("prompt_tokens") or 0
         c = r.get("completion_tokens") or 0
@@ -83,6 +92,7 @@ def calculate_metrics(records):
         "distinct_trace_ids": len(trace_counts),
         "trace_id_counts": trace_counts,
         "model_breakdown": model_stats,
+        "run_types": run_types,
     }
 
 
@@ -103,6 +113,11 @@ def print_summary(metrics, file_path):
     for model, info in metrics["model_breakdown"].items():
         print(f"  - {model}: {info['calls']} calls, {info['tokens']} tokens, {info['errors']} errors")
 
+    if metrics.get("run_types"):
+        print("\nRun types:")
+        for rtype, count in metrics["run_types"].items():
+            print(f"  - {rtype}: {count} calls")
+
     multi_traces = {t: c for t, c in metrics["trace_id_counts"].items() if c > 1}
     if multi_traces:
         print(f"\nMulti-step traces ({len(multi_traces)}):")
@@ -111,7 +126,7 @@ def print_summary(metrics, file_path):
     print()
 
 
-def analyze(file_path="llm_calls.jsonl"):
+def analyze(file_path=DEFAULT_LOG_FILE):
     records = parse_log_file(file_path)
     metrics = calculate_metrics(records)
     print_summary(metrics, file_path)
@@ -120,7 +135,7 @@ def analyze(file_path="llm_calls.jsonl"):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Analyze LLM JSONL logs")
-    parser.add_argument("--file", "-f", default="llm_calls.jsonl", help="Log file path")
+    parser.add_argument("--file", "-f", default=DEFAULT_LOG_FILE, help="Log file path")
     parser.add_argument("--json", action="store_true", help="Print json metrics")
     args = parser.parse_args()
 

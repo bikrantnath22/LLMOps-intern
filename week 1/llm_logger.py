@@ -5,11 +5,15 @@ import uuid
 from datetime import datetime, timezone
 from dotenv import load_dotenv
 
+from pathlib import Path
+
 # load .env if present
 load_dotenv()
 
+BASE_DIR = Path(__file__).resolve().parent
 DEFAULT_MODEL = os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b")
-DEFAULT_LOG_FILE = os.getenv("LLM_LOG_FILE", "llm_calls.jsonl")
+_env_log = os.getenv("LLM_LOG_FILE", "llm_calls.jsonl")
+DEFAULT_LOG_FILE = str(BASE_DIR / _env_log) if not os.path.isabs(_env_log) else _env_log
 
 
 def log_entry(log_path, entry):
@@ -26,7 +30,7 @@ def get_client(api_key=None):
     return Groq(api_key=key)
 
 
-def call_llm(prompt, model=DEFAULT_MODEL, trace_id=None, log_file=DEFAULT_LOG_FILE, client=None, **kwargs):
+def call_llm(prompt, model=DEFAULT_MODEL, trace_id=None, log_file=DEFAULT_LOG_FILE, client=None, run_type="manual", **kwargs):
     """
     Wraps Groq LLM call with timing, error handling, and JSONL logging.
     Returns result dict with success flag, response, and metadata.
@@ -52,6 +56,7 @@ def call_llm(prompt, model=DEFAULT_MODEL, trace_id=None, log_file=DEFAULT_LOG_FI
         entry = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "trace_id": trace_id,
+            "run_type": run_type,
             "model": model,
             "prompt": prompt,
             "response": content,
@@ -67,6 +72,7 @@ def call_llm(prompt, model=DEFAULT_MODEL, trace_id=None, log_file=DEFAULT_LOG_FI
         return {
             "success": True,
             "trace_id": trace_id,
+            "run_type": run_type,
             "response": content,
             "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
@@ -82,6 +88,7 @@ def call_llm(prompt, model=DEFAULT_MODEL, trace_id=None, log_file=DEFAULT_LOG_FI
         entry = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "trace_id": trace_id,
+            "run_type": run_type,
             "model": model,
             "prompt": prompt,
             "response": None,
@@ -97,6 +104,7 @@ def call_llm(prompt, model=DEFAULT_MODEL, trace_id=None, log_file=DEFAULT_LOG_FI
         return {
             "success": False,
             "trace_id": trace_id,
+            "run_type": run_type,
             "response": None,
             "prompt_tokens": 0,
             "completion_tokens": 0,

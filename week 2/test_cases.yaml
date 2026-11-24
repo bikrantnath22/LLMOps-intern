@@ -1,0 +1,75 @@
+# Week 2: Regression Check Test Cases
+# Deterministic pass/fail checks to verify pipeline reliability after changes.
+
+- id: "tc01_capital"
+  name: "Capital of France"
+  prompt: "What is the capital of France? Answer with only the city name."
+  pass_condition:
+    contains: ["Paris"]
+    max_words: 5
+
+- id: "tc02_math"
+  name: "Arithmetic Multiplication"
+  prompt: "What is 25 multiplied by 4? Output only the number."
+  pass_condition:
+    contains: ["100"]
+    max_words: 5
+
+- id: "tc03_json_dict"
+  name: "Structured JSON Object"
+  prompt: 'Return a raw JSON object with keys "status" (value "ok") and "code" (value 200). Output raw JSON only.'
+  pass_condition:
+    is_valid_json: true
+    json_type: "dict"
+    required_keys: ["status", "code"]
+
+- id: "tc04_length_bound"
+  name: "Word Count Length Bound"
+  prompt: "In 15 words or fewer, define an API. Include the word 'API'."
+  pass_condition:
+    contains: ["API"]
+    min_words: 3
+    max_words: 20
+
+- id: "tc05_boolean_choice"
+  name: "Binary Choice Constraint"
+  prompt: "Answer with only the word YES or NO: Is ice cold?"
+  pass_condition:
+    contains_any: ["YES", "Yes", "yes"]
+    does_not_contain: ["NO", "No"]
+    max_words: 5
+
+- id: "tc06_code_syntax"
+  name: "Code Syntax Generation"
+  prompt: "Write a Python function named add that returns a + b. Provide only the code."
+  pass_condition:
+    contains: ["def add", "return"]
+
+- id: "tc07_json_list"
+  name: "Structured JSON Array"
+  prompt: 'Output a JSON array containing three colors: ["red", "green", "blue"]. Output raw JSON only.'
+  pass_condition:
+    is_valid_json: true
+    json_type: "list"
+
+- id: "tc08_sentiment"
+  name: "Sentiment Classification"
+  prompt: "Classify the sentiment of this text: 'This tool saved us hours of debugging!'. Respond with exactly one word: POSITIVE, NEGATIVE, or NEUTRAL."
+  pass_condition:
+    contains: ["POSITIVE"]
+    does_not_contain: ["NEGATIVE"]
+    max_words: 5
+
+- id: "tc09_trivia"
+  name: "Solar System Trivia"
+  prompt: "Which planet in our solar system is nicknamed the Red Planet? Answer with the planet name only."
+  pass_condition:
+    contains: ["Mars"]
+    max_words: 5
+
+- id: "tc10_chemical_formula"
+  name: "Chemical Formula"
+  prompt: "What is the chemical formula for water? Reply with only the formula."
+  pass_condition:
+    contains_any: ["H2O", "H₂O"]
+    max_chars: 15
